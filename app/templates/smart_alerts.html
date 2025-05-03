@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<nav class="navbar">
+    <div class="nav-title">Greenhouse Monitoring System</div>
+    <div class="nav-buttons">
+        <a href="{{ url_for('main.dashboard') }}" class="nav-button">
+            <i class="fas fa-arrow-left"></i> Dashboard
+        </a>
+        <a href="{{ url_for('auth.logout') }}" class="nav-button"
+           style="background-color: #e74c3c; margin-left: 10px;">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </div>
+</nav>
+
+    <h2>Active Issues</h2>
+    <div class="issues-table-container">
+        <table class="issues-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Greenhouse</th>
+                    <th>Issue</th>
+                    <th>Parameter</th>
+                    <th>Current Value</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for issue in active_issues %}
+                <tr class="priority-{{ issue.priority|lower }}">
+                    <td>{{ issue.id }}</td>
+                    <td>{{ issue.greenhouse.name }}</td>
+                    <td>{{ issue.description }}</td>
+                    <td>{{ issue.parameter.name }}</td>
+                    <td>{{ issue.current_value }} {{ issue.parameter.unit }}</td>
+                    <td>
+                        <span class="priority-badge">{{ issue.priority }}</span>
+                    </td>
+                    <td>
+                        <span class="status-badge">{{ issue.status }}</span>
+                    </td>
+                    <td class="actions">
+                        <a href="{{ url_for('main.get_issues') }}?issue_id={{ issue.id }}">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
