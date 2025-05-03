@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}All Greenhouses{% endblock %}
+
+{% block content %}
+<nav class="navbar">
+    <div class="nav-title">Greenhouse Monitoring System</div>
+    <div class="nav-buttons">
+        <a href="{{ url_for('main.dashboard') }}" class="nav-button">
+            <i class="fas fa-arrow-left"></i> Dashboard
+        </a>
+        <a href="{{ url_for('auth.logout') }}" class="nav-button"
+           style="background-color: #e74c3c; margin-left: 10px;">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </div>
+</nav>
+
+<div class="container">
+    <h1 class="page-header"><i class="fas fa-seedling"></i> Greenhouses</h1>
+
+    <div class="greenhouse-cards">
+        {% for gh in greenhouses %}
+        <div class="greenhouse-card">
+            <div class="card-header">
+                <h3>{{ gh.name }}</h3>
+                <span class="location"><i class="fas fa-map-marker-alt"></i> {{ gh.location }}</span>
+            </div>
+            <div class="card-actions">
+                <a href="{{ url_for('main.greenhouse_detail', greenhouse_id=gh.id) }}" class="card-button">
+                    <i class="fas fa-chevron-right"></i> View Details
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <div class="no-results">
+            <i class="fas fa-info-circle"></i> No greenhouses found
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block content %}
+<nav class="navbar">
+    <div class="nav-title">Greenhouse Monitoring System</div>
+    <div class="nav-buttons">
+        {% if current_user.is_admin %}
+        <a href="{{ url_for('admin.list_users') }}" class="nav-button">
+            <i class="fas fa-users-cog"></i> Users
+        </a>
+        {% endif %}
+        <a href="{{ url_for('main.list_greenhouses') }}" class="nav-button">
+            <i class="fas fa-leaf"></i> Greenhouses
+        </a>
+        <a href="{{ url_for('admin.manage_parameters') }}" class="nav-button">
+             <i class="fas fa-sliders-h"></i> Parameters
+        </a>
+        <a href="{{ url_for('auth.logout') }}" class="nav-button logout-btn">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </div>
+</nav>
+
+<div class="dashboard-container">
+    <!-- Features Column -->
+    <div class="features-column">
+        <div class="feature-card monitoring" onclick="window.location.href='{{ url_for('main.realtime_monitoring') }}'">
+            <div class="feature-icon">
+                <i class="fas fa-temperature-high"></i>
+            </div>
+            <div class="feature-content">
+                <h3>Real-time Monitoring</h3>
+                <p>Track Temperature, Humidity and more</p>
+            </div>
+        </div>
+
+        <div class="feature-card alerts" onclick="window.location.href='{{ url_for('main.smart_alerts') }}'">
+            <div class="feature-icon">
+                <i class="fas fa-bell"></i>
+            </div>
+            <div class="feature-content">
+                <h3>Smart Alerts</h3>
+                <p>Critical change notifications</p>
+            </div>
+        </div>
+
+        <div class="feature-card analytics" onclick="window.location.href='{{ url_for('main.data_analytics') }}'">
+            <div class="feature-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="feature-content">
+                <h3>Data Analytics</h3>
+                <p>Historical trends and patterns</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Primary Content Area -->
+    <section class="main-content-area">
+        <!-- Status Overview -->
+        <div class="status-container">
+            <div class="status-card critical">
+                <h3>Critical Issues</h3>
+                <p>{{ critical_issues }}</p>
+            </div>
+            <div class="status-card open">
+                <h3>Open Issues</h3>
+                <p>{{ open_issues }}</p>
+            </div>
+            <div class="status-card resolved">
+                <h3>Resolved Issues</h3>
+                <p>{{ resolved_issues }}</p>
+            </div>
+        </div>
+
+        <!-- Active Issues -->
+        <article id="active-issues">
+            <h2>Active Issues</h2>
+            <div id="issues-container"></div>
+        </article>
+
+        <!-- Data Table -->
+        <div class="table-container">
+            <table class="greenhouse-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Greenhouse</th>
+                        <th>Issue</th>
+                        <th>Priority</th>
+                        <th>Assigned To</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for greenhouse in greenhouses %}
+                    <tr tabindex="0">
+                        <td>{{ greenhouse.id }}</td>
+                        <td>{{ greenhouse.name }}</td>
+                        <td>{% if greenhouse.issues %}Yes{% else %}No{% endif %}</td>
+                        <td>
+                            {% if greenhouse.issues %}
+                            <span class="priority-{{ greenhouse.issues[0].priority|lower }}">
+                                {{ greenhouse.issues[0].priority }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if greenhouse.issues %}
+                            {{ greenhouse.issues[0].assigned_to.username if greenhouse.issues[0].assigned_to else 'Unassigned' }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if greenhouse.issues %}
+                            <span class="status-{{ greenhouse.issues[0].status|lower }}">
+                                {{ greenhouse.issues[0].status }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="action-links">
+                            <a href="/greenhouse/{{ greenhouse.id }}">View</a>
+                            {% if current_user.is_admin %}
+                            <a href="/greenhouse/{{ greenhouse.id }}/edit">Edit</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<!-- Admin Components -->
+{% if current_user.is_admin %}
+<!-- Hidden selectors for JS to use -->
+<select id="employeeSelect" style="display:none;">
+    {% for user in users if not user.is_admin %}
+    <option value="{{ user.id }}">{{ user.username }}</option>
+    {% endfor %}
+</select>
+
+<select id="greenhouseSelect" style="display:none;">
+    {% for greenhouse in greenhouses %}
+    <option value="{{ greenhouse.id }}">{{ greenhouse.name }}</option>
+    {% endfor %}
+</select>
+
+<!-- Assignment Modal -->
+<div id="assignmentModal" class="modal" style="display: none;"> <!-- FIXED: Hidden by default -->
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Assign Greenhouse</h3>
+        <form id="assignmentForm">
+            <div class="form-group">
+                <label for="modalEmployeeSelect">Employee:</label>
+                <select id="modalEmployeeSelect" class="form-select" required>
+                    {% for user in users if not user.is_admin %}
+                    <option value="{{ user.id }}">{{ user.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="modalGreenhouseSelect">Greenhouse:</label>
+                <select id="modalGreenhouseSelect" class="form-select" required>
+                    {% for greenhouse in greenhouses %}
+                    <option value="{{ greenhouse.id }}">{{ greenhouse.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="assign-button">
+                <span class="button-text">Confirm Assignment</span>
+                <span class="loading-spinner" style="display:none;">
+                    <i class="fas fa-spinner fa-spin"></i> Processing...
+                </span>
+            </button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

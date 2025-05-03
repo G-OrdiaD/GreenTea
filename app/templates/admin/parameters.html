@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Parameter Management{% endblock %}
+
+{% block content %}
+<nav class="navbar">
+    <div class="nav-title">Greenhouse Monitoring System</div>
+    <div class="nav-buttons">
+        {% if current_user.is_admin %}
+        {% endif %}
+        <a href="{{ url_for('main.dashboard') }}" class="nav-button">
+            <i class="fas fa-arrow-left"></i> Dashboard
+        </a>
+        <a href="{{ url_for('main.list_greenhouses') }}" class="nav-button">
+            <i class="fas fa-leaf"></i> Greenhouses
+        </a>
+        <a href="{{ url_for('auth.logout') }}" class="nav-button"
+           style="background-color: #e74c3c; margin-left: 10px;">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </div>
+</nav>
+
+<div class="admin-container">
+    <nav class="admin-nav">
+        <h2>Admin Panel</h2>
+    </nav>
+
+    <div class="admin-content">
+        <div class="parameter-management-grid">
+            <!-- Add Parameter Form -->
+            <div class="parameter-form-card">
+                <h3><i class="fas fa-sliders-h"></i> Parameter Management</h3>
+                <h4 class="form-section-title">Add New Parameter</h4>
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-group">
+                        {{ form.name.label }}
+                        {{ form.name(class="form-control", placeholder="Enter parameter name") }}
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            {{ form.min_value.label }}
+                            {{ form.min_value(class="form-control", placeholder="Min") }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.max_value.label }}
+                            {{ form.max_value(class="form-control", placeholder="Max") }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.unit.label }}
+                            {{ form.unit(class="form-control", placeholder="Unit") }}
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary full-width-btn">
+                        <i class="fas fa-save"></i> Save Parameter
+                    </button>
+                </form>
+            </div>
+
+            <!-- Existing Parameters Table -->
+            <div class="parameter-table-card">
+                <h4 class="table-section-title">Existing Parameters</h4>
+                <div class="table-responsive-wrapper">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Min Value</th>
+                                <th>Max Value</th>
+                                <th>Unit</th>
+                                <th class="actions-column">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for param in parameters %}
+                            <tr>
+                                <td>{{ param.name }}</td>
+                                <td>{{ param.min_value }}</td>
+                                <td>{{ param.max_value }}</td>
+                                <td>{{ param.unit }}</td>
+                                <td class="actions">
+                                    <a href="#" class="btn-sm btn-edit">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    <a href="#" class="btn-sm btn-danger">
+                                        <i class="fas fa-trash-alt"></i> Delete
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

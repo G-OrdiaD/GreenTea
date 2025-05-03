@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<nav class="navbar">
+    <div class="nav-title">Greenhouse Monitoring System</div>
+    <div class="nav-buttons">
+        <a href="{{ url_for('main.dashboard') }}" class="nav-button">
+            <i class="fas fa-arrow-left"></i> Dashboard
+        </a>
+        <a href="{{ url_for('auth.logout') }}" class="nav-button"
+           style="background-color: #e74c3c; margin-left: 10px;">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </div>
+</nav>
+
+    <h2>Optimal Parameter Ranges</h2>
+    <div class="parameter-table-container">
+        <table class="parameter-table">
+            <thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Min Value</th>
+                    <th>Max Value</th>
+                    <th>Unit</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for param in parameters %}
+                <tr>
+                    <td>{{ param.name }}</td>
+                    <td>{{ param.min_value }}</td>
+                    <td>{{ param.max_value }}</td>
+                    <td>{{ param.unit }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <h2>Current Sensor Readings</h2>
+    <div class="current-readings">
+        {% for reading in current_readings %}
+        <div class="reading-card">
+            <h3>{{ reading.greenhouse.name }}</h3>
+            <div class="reading-values">
+                <p><i class="fas fa-temperature-high"></i> {{ reading.temperature }}°C</p>
+                <p><i class="fas fa-tint"></i> {{ reading.humidity }}%</p>
+                <p><i class="fas fa-wind"></i> {{ reading.air_quality }} ppm</p>
+                <p><i class="fas fa-sun"></i> {{ reading.light_intensity }} lux</p>
+                <p><i class="fas fa-vial"></i> {{ reading.ph }} pH</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

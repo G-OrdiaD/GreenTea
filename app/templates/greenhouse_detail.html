@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Greenhouse Details{% endblock %}
+
+{% block content %}
+<nav class="navbar">
+    <div class="nav-title">Greenhouse Monitoring System</div>
+    <div class="nav-buttons">
+        <a href="{{ url_for('main.dashboard') }}" class="nav-button">
+            <i class="fas fa-arrow-left"></i> Dashboard
+        </a>
+        <a href="{{ url_for('auth.logout') }}" class="nav-button"
+           style="background-color: #e74c3c; margin-left: 10px;">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="greenhouse-header">
+        <h1><i class="fas fa-seedling"></i> {{ greenhouse.name }}</h1>
+        <div class="location-badge">
+            <i class="fas fa-map-marker-alt"></i> {{ greenhouse.location or 'Unknown' }}
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <!-- Status Summary Cards -->
+        <div class="status-summary">
+            <div class="status-card">
+                <h3>Open Issues</h3>
+                <span class="count">{{ issues|selectattr('status', 'equalto', 'Open')|list|length }}</span>
+            </div>
+            <div class="status-card">
+                <h3>Being Fixed</h3>
+                <span class="count">{{ issues|selectattr('status', 'equalto', 'Fixing')|list|length }}</span>
+            </div>
+            <div class="status-card">
+                <h3>Critical</h3>
+                <span class="count">{{ issues|selectattr('priority', 'equalto', 'Critical')|list|length }}</span>
+            </div>
+        </div>
+
+        <!-- Issues Table -->
+        <div class="issues-section">
+            <h2><i class="fas fa-exclamation-triangle"></i> Current Issues</h2>
+
+            {% if issues %}
+            <div class="table-responsive">
+                <table class="issue-table">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Value</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Timestamp</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for issue in issues %}
+                        <tr class="priority-{{ issue.priority|lower }}">
+                            <td>{{ issue.parameter.name }}</td>
+                            <td>{{ issue.current_value }} {{ issue.parameter.unit or '' }}</td>
+                            <td>
+                                <span class="status-badge status-{{ issue.status|lower }}">
+                                    {{ issue.status }}
+                                </span>
+                            </td>
+                            <td>{{ issue.priority }}</td>
+                            <td>{{ issue.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td class="actions">
+                                <a href="{{ url_for('main.view_issue', issue_id=issue.id) }}" class="btn-view">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                <form action="{{ url_for('main.update_issue_status', issue_id=issue.id) }}" method="POST" class="status-form">
+                                    <select name="status" class="status-select">
+                                        <option value="Open" {% if issue.status =='Open' %}selected{% endif %}>Open</option>
+                                        <option value="Fixing" {% if issue.status =='Fixing' %}selected{% endif %}>Fixing</option>
+                                        <option value="Resolved" {% if issue.status =='Resolved' %}selected{% endif %}>Resolved</option>
+                                    </select>
+                                    <button type="submit" class="btn-update">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="no-issues">
+                <i class="fas fa-check-circle"></i> No current issues
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

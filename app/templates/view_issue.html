@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block head %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+{% endblock %}
+
+{% block content %}
+<nav class="navbar">
+    <div class="nav-title">Greenhouse Monitoring System</div>
+    <div class="nav-buttons">
+</nav>
+
+<nav class="navbar">
+    <div class="nav-title">Issue #{{ issue.id }}</div>
+    <div class="nav-buttons">
+        <a href="{{ url_for('main.dashboard') }}" class="nav-button">
+            <i class="fas fa-arrow-left"></i> Dashboard
+        </a>
+        <a href="{{ url_for('auth.logout') }}" class="nav-button logout-btn">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </div>
+</nav>
+
+<div class="issue-container">
+    <div class="issue-details">
+        <p><strong>Greenhouse:</strong> {{ greenhouse.name }}</p>
+        <p><strong>Parameter:</strong> {{ issue.parameter.name }}</p>
+        <p><strong>Current Value:</strong> {{ issue.current_value }} {{ issue.parameter.unit }}</p>
+        <p><strong>Status:</strong> <span class="status status-{{ issue.status|lower }}">{{ issue.status }}</span></p>
+        <p><strong>Priority:</strong> <span class="priority-{{ issue.priority|lower }}">{{ issue.priority }}</span></p>
+        <p><strong>Reported:</strong> {{ issue.timestamp.strftime('%Y-%m-%d %H:%M') }}</p>
+    </div>
+
+    <div class="status-update-form">
+        <form action="{{ url_for('main.update_issue_status', issue_id=issue.id) }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label for="status">Update Status:</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="Open" {% if issue.status =='Open' %}selected{% endif %}>Open</option>
+                    <option value="Fixing" {% if issue.status =='Fixing' %}selected{% endif %}>Fixing</option>
+                    <option value="Resolved" {% if issue.status =='Resolved' %}selected{% endif %}>Resolved</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Update Status
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
