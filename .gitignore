@@ -5,6 +5,6 @@ _pychache_/
 instance/
 *.pyc
 .vscode/
-/instance/
 *.db
 /migrations/
+.DS_store
