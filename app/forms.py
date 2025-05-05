@@ -1,3 +1,4 @@
+from app.models import SensorParameter
 from flask_wtf import FlaskForm
 from wtforms.validators import DataRequired, Length, Email, EqualTo,NumberRange, ValidationError
 from wtforms import (
