@@ -1,124 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Only initialize if admin
-    if (document.querySelector('.action-links a[href*="edit"]')) {
-        initAssignmentSystem();
-    }
-
-// Automatically adds CSRF token to all AJAX requests
-$.ajaxSetup({
-    headers: {
-        'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
-    }
-});
-
-    // Create and style the assignment button
-   function initAssignmentSystem() {
-    const assignBtn = document.createElement('button');
-    assignBtn.className = 'nav-button';
-    assignBtn.id = 'assignGreenhouseBtn';
-    assignBtn.innerHTML = '<i class="fas fa-user-plus"></i> Assign Greenhouse';
-    document.querySelector('.nav-buttons').prepend(assignBtn);
-
-    // Create modal
-    const modal = document.createElement('div');
-    modal.id = 'assignmentModal';
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h3 style="margin-bottom: 1.5rem;">Assign Greenhouse</h3>
-            <form id="assignmentForm">
-                <div class="form-group">
-                    <label for="employeeSelect">Employee:</label>
-                    <select id="employeeSelect" class="form-select" required>
-                        </select>
-                </div>
-                <div class="form-group">
-                    <label for="greenhouseSelect">Greenhouse:</label>
-                    <select id="greenhouseSelect" class="form-select" required>
-                        ${Array.from(document.querySelectorAll('#greenhouseSelect option'))
-                            .map(opt => opt.outerHTML)
-                            .join('')}
-                    </select>
-                </div>
-                <button type="submit" class="assign-button">Confirm Assignment</button>
-            </form>
-        </div>
-    `;
-    document.body.appendChild(modal);
-
-    const employeeSelect = document.getElementById('employeeSelect'); // Get the select element
-
-    // Fetch and populate employees (using /admin/users and requesting JSON)
-    fetch('/admin/users', {
+    // Automatically adds CSRF token to all AJAX requests
+    $.ajaxSetup({
         headers: {
-            'Accept': 'application/json' // Request JSON data
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data && data.users) { // Assuming your Flask route returns {'users': [...]} for JSON
-            data.users.forEach(user => {
-                const option = document.createElement('option');
-                option.value = user.id;
-                option.textContent = user.username; // Adjust based on your User model properties
-                employeeSelect.appendChild(option);
-            });
-        } else {
-            console.error('Error fetching or processing user data:', data);
-        }
-    })
-    .catch(error => {
-        console.error('Error fetching users:', error);
-    });
-
-    // Modal control functions
-    const openModal = () => modal.style.display = 'block';
-    const closeModal = () => modal.style.display = 'none';
-
-    // Event listeners
-    assignBtn.addEventListener('click', openModal);
-    document.querySelector('.close-modal').addEventListener('click', closeModal);
-    window.addEventListener('click', (e) => e.target === modal && closeModal());
-
-    // Form submission
-    document.getElementById('assignmentForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Processing...';
-
-        try {
-            const response = await fetch('/admin/assign', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({
-                    employee_id: document.getElementById('employeeSelect').value,
-                    greenhouse_id: document.getElementById('greenhouseSelect').value
-                })
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                showAlert('Assignment successful!', 'success');
-                closeModal();
-            } else {
-                throw new Error(data.error || 'Assignment failed');
-            }
-        } catch (error) {
-            showAlert(error.message, 'error');
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Confirm Assignment';
+            'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
         }
     });
-}
 
+    // Alert/Notification functions
     function showAlert(message, type) {
         const alert = document.createElement('div');
         alert.className = `alert alert-${type}`;
@@ -134,89 +22,138 @@ $.ajaxSetup({
         document.body.appendChild(alert);
         setTimeout(() => alert.remove(), 30000);
     }
-});
 
-function showNotification(message, type='success') {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.innerHTML = `
-        <p>${message}</p>
-        <button class="close-notif">&times;</button>
-    `;
-    document.body.appendChild(notification);
+    function showNotification(message, type='success') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <p>${message}</p>
+            <button class="close-notif">&times;</button>
+        `;
+        document.body.appendChild(notification);
 
-    // Auto-remove after 60s
-    setTimeout(() => notification.remove(), 60000);
+        setTimeout(() => notification.remove(), 60000);
+        notification.querySelector('.close-notif').addEventListener('click', () => {
+            notification.remove();
+        });
+    }
 
-    // Manual close
-    notification.querySelector('.close-notif').addEventListener('click', () => {
-        notification.remove();
-    });
-}
+    // Issues functionality
+    function fetchActiveIssues() {
+        fetch('/issues')
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.issues) {
+                    displayIssues(data.issues);
+                }
+            })
+            .catch(console.error);
+    }
 
+    function displayIssues(issues) {
+        const issuesContainer = document.getElementById('issues-container');
+        issuesContainer.innerHTML = issues.length ?
+            issues.map(issue =>
+                `<li>[${issue.greenhouse_name}] ${issue.message} (Priority: ${issue.priority}, Status: ${issue.status})</li>`
+            ).join('') :
+            '<p>No active issues.</p>';
+    }
 
-function fetchActiveIssues() {
-    fetch('/issues')
+    // Feedback functionality
+    function submitFeedback() {
+        const message = document.getElementById('feedbackMessage').value.trim();
+        if (!message) return alert('Please enter a message');
+
+        fetch("/feedback", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({ message: message })
+        })
         .then(response => response.json())
         .then(data => {
-            if (data && data.issues) {
-                displayIssues(data.issues);
+            if (data.status === "success") {
+                alert("Feedback submitted!");
+                document.getElementById('feedbackMessage').value = "";
+                bootstrap.Modal.getInstance(document.getElementById('feedbackModal')).hide();
             } else {
-                console.log("No active issues found or error fetching issues.");
+                alert("Something went wrong. Please try again.");
             }
-        })
-        .catch(error => {
-            console.error("Error fetching issues:", error);
         });
-}
-
-function displayIssues(issues) {
-    const issuesContainer = document.getElementById('issues-container');
-    issuesContainer.innerHTML = '';
-
-    if (issues.length === 0) {
-        issuesContainer.innerHTML = '<p>No active issues.</p>';
-        return;
     }
 
-    const ul = document.createElement('ul');
-    issues.forEach(issue => {
-        const li = document.createElement('li');
-        li.textContent = `[${issue.greenhouse_name}] ${issue.message} (Priority: ${issue.priority}, Status: ${issue.status})`;
-        ul.appendChild(li);
-    });
-    issuesContainer.appendChild(ul);
-}
-// Call this function when your dashboard loads or at an interval
-document.addEventListener('DOMContentLoaded', fetchActiveIssues);
+    // Assignment Modal - SINGLE IMPLEMENTATION
+    const modal = document.getElementById('assignmentModal');
+    const assignBtn = document.getElementById('assignGreenhouseBtn');
 
+    if (modal && assignBtn) {
+        // Copy options from hidden selects to modal selects
+        function populateDropdowns() {
+            const hiddenEmployeeSelect = document.getElementById('employeeSelect');
+            const modalEmployeeSelect = modal.querySelector('#employeeSelect');
 
-function submitFeedback() {
-  const message = document.getElementById('feedbackMessage').value;
-  if (!message.trim()) {
-    alert('Please enter a message');
-    return;
-  }
+            if (hiddenEmployeeSelect && modalEmployeeSelect) {
+                modalEmployeeSelect.innerHTML = hiddenEmployeeSelect.innerHTML;
+            }
 
-  const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            // Greenhouse select is already populated in template
+        }
 
-  fetch("/feedback", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": csrfToken // Include the CSRF token in the headers
-    },
-    body: JSON.stringify({ message: message })
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.status === "success") {
-      alert("Feedback submitted!");
-      document.getElementById('feedbackMessage').value = "";
-      const modal = bootstrap.Modal.getInstance(document.getElementById('feedbackModal'));
-      modal.hide();
-    } else {
-      alert("Something went wrong. Please try again.");
+        // Modal control
+        assignBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            populateDropdowns();
+            modal.style.display = 'block';
+        });
+
+        document.querySelector('.close-modal').addEventListener('click', function() {
+            modal.style.display = 'none';
+        });
+
+        window.addEventListener('click', function(e) {
+            if (e.target === modal) modal.style.display = 'none';
+        });
+
+        // Form submission
+        document.getElementById('assignmentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const form = e.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            submitBtn.disabled = true;
+
+            fetch('/admin/assign', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    employee_id: form.querySelector('#employeeSelect').value,
+                    greenhouse_id: form.querySelector('#greenhouseSelect').value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                showNotification('Assignment successful!');
+                modal.style.display = 'none';
+            })
+            .catch(error => {
+                showNotification(error.message, 'error');
+            })
+            .finally(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
+        });
     }
-  });
-}
+
+    // Initialize
+    fetchActiveIssues();
+    document.getElementById('feedbackForm')?.addEventListener('submit', submitFeedback);
+});

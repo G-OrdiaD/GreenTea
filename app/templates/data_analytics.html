@@ -13,6 +13,7 @@
         </a>
     </div>
 </nav>
+
 <div class="analytics-container">
     <div class="subpage-header">
         <h2>Historical Data Analytics</h2>
@@ -20,47 +21,66 @@
 
     <!-- Time Filters -->
     <div class="time-filters">
-        <button class="time-filter active">24 Hours</button>
-        <button class="time-filter">7 Days</button>
-        <button class="time-filter">30 Days</button>
-        <button class="time-filter">Custom Range</button>
+        <a href="{{ url_for('main.data_analytics', range='24h') }}"
+           class="time-filter {{ 'active' if active_range == '24h' }}">24 Hours</a>
+        <a href="{{ url_for('main.data_analytics', range='7d') }}"
+           class="time-filter {{ 'active' if active_range == '7d' }}">7 Days</a>
+        <a href="{{ url_for('main.data_analytics', range='30d') }}"
+           class="time-filter {{ 'active' if active_range == '30d' }}">30 Days</a>
+        <button class="time-filter" id="customRangeBtn">Custom Range</button>
     </div>
 
-    <div class="chart-grid">
-        <div class="chart-card">
-            <h3><i class="fas fa-temperature-high"></i> Temperature</h3>
-            <div class="chart-wrapper">
-                <canvas id="temperatureChart"></canvas>
-            </div>
-        </div>
+    <!-- Main Data Tables -->
+    <div class="data-tables">
+        {% for parameter, records in history_data.items() %}
+        <div class="parameter-table">
+            <h3>
+                <i class="fas fa-{{
+                    'temperature-high' if parameter == 'temperature'
+                    else 'tint' if parameter == 'humidity'
+                    else 'wind' if parameter == 'air_quality'
+                    else 'vial' if parameter == 'ph_level'
+                    else 'sun'
+                }}"></i>
+                {{ parameter.replace('_', ' ')|title }}
+            </h3>
 
-        <div class="chart-card">
-            <h3><i class="fas fa-tint"></i> Humidity</h3>
-            <div class="chart-wrapper">
-                <canvas id="humidityChart"></canvas>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Greenhouse</th>
+                            <th>Value</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in records %}
+                        <tr class="{{
+                            'warning-row' if record.value > record.parameter.max_value
+                            else 'danger-row' if record.value < record.parameter.min_value
+                            else ''
+                        }}">
+                            <td>{{ record.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ record.greenhouse.name }}</td>
+                            <td>{{ record.value }} {{ record.parameter.unit }}</td>
+                            <td>
+                                {% if record.value > record.parameter.max_value %}
+                                    <i class="fas fa-arrow-up warning-icon"></i> High
+                                {% elif record.value < record.parameter.min_value %}
+                                    <i class="fas fa-arrow-down danger-icon"></i> Low
+                                {% else %}
+                                    <i class="fas fa-check-circle success-icon"></i> Normal
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-
-        <div class="chart-card">
-            <h3><i class="fas fa-wind"></i> Air Quality</h3>
-            <div class="chart-wrapper">
-                <canvas id="airQualityChart"></canvas>
-            </div>
-        </div>
-
-        <div class="chart-card">
-            <h3><i class="fas fa-vial"></i> pH Level</h3>
-            <div class="chart-wrapper">
-                <canvas id="phChart"></canvas>
-            </div>
-        </div>
-
-        <div class="chart-card">
-            <h3><i class="fas fa-sun"></i> Light Intensity</h3>
-            <div class="chart-wrapper">
-                <canvas id="lightChart"></canvas>
-            </div>
-        </div>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}
