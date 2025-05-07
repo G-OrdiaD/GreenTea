@@ -34,10 +34,6 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
 
-    with app.app_context():
-        from .utils.monitoring import insert_default_optimal_ranges
-        insert_default_optimal_ranges()
-
     csrf.exempt(lambda request: request.method in {'GET', 'HEAD', 'OPTIONS', 'TRACE'})
 
     return app

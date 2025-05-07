@@ -68,6 +68,7 @@ class SensorParameter(db.Model):
     max_value = db.Column(db.Float, nullable=False)
     unit = db.Column(db.String(15))
 
+
 class Issue(db.Model):
     __tablename__ = 'issues'
     id = db.Column(db.Integer, primary_key=True)
@@ -92,13 +93,3 @@ class Feedback(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     message = db.Column(db.Text)
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-class OptimalRange(db.Model):
-    __tablename__ = 'optimal_ranges'
-    id = db.Column(db.Integer, primary_key=True)
-    parameter = db.Column(db.String(50), nullable=False)
-    min_value = db.Column(db.Float, nullable=False)
-    max_value = db.Column(db.Float, nullable=False)
-
-    def __repr__(self):
-        return f"<OptimalRange(parameter={self.parameter}, min_value={self.min_value}, max_value={self.max_value})>"

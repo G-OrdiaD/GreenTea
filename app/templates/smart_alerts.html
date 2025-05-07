@@ -26,7 +26,6 @@
                     <th>Current Value</th>
                     <th>Priority</th>
                     <th>Status</th>
-                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -42,9 +41,6 @@
                     </td>
                     <td>
                         <span class="status-badge">{{ issue.status }}</span>
-                    </td>
-                    <td class="actions">
-                        <a href="{{ url_for('main.get_issues') }}?issue_id={{ issue.id }}">View</a>
                     </td>
                 </tr>
                 {% endfor %}

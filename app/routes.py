@@ -1,12 +1,10 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from datetime import datetime, timedelta
-from werkzeug.security import generate_password_hash
 from app.models import db, SensorParameter, SensorData, Greenhouse, Feedback, Issue
 from .utils.sms_utils import send_sms_alert
 from flask import Blueprint
 from app import db
 from flask_login import login_required, current_user
-from .forms import ParameterForm
 from .utils.monitoring import check_sensor_readings
 
 
@@ -29,17 +27,22 @@ def dashboard():
 
     critical_issues = Issue.query.filter_by(priority='Critical').count()
     open_issues = Issue.query.filter_by(status='Open').count()
+    fixing_issues = Issue.query.filter_by(status= 'Fixing').count()
     resolved_issues = Issue.query.filter_by(status='Resolved').count()
 
     greenhouses = Greenhouse.query.all()
     parameters = SensorParameter.query.all()
+    all_issues = Issue.query.order_by(Issue.timestamp.desc()).all()
 
     return render_template('dashboard.html',
                            data=sensor_data,
                            greenhouses=greenhouses,
                            parameters=parameters,
                            critical_issues=critical_issues,
-                           open_issues=open_issues)
+                           open_issues=open_issues,
+                           fixing_issues=fixing_issues,
+                           resolved_issues=resolved_issues,
+                           all_issues=all_issues)
 
 
 @bp.route('/issues')
@@ -77,12 +80,21 @@ def get_issues():
 @bp.route('/issues/<int:issue_id>')
 @login_required
 def view_issue(issue_id):
-    """View details of a specific issue"""
     issue = Issue.query.get_or_404(issue_id)
-    greenhouse = Greenhouse.query.get(issue.greenhouse_id)
+    greenhouse = Greenhouse.query.get_or_404(issue.greenhouse_id)
+
+    active_greenhouse_issues = Issue.query.filter(
+        Issue.greenhouse_id == greenhouse.id,
+        Issue.status.in_(['Open', 'Fixing'])
+    ).order_by(
+        Issue.priority.desc(),
+        Issue.timestamp.desc()
+    ).all()
+
     return render_template('view_issue.html',
-                         issue=issue,
-                         greenhouse=greenhouse)
+                           issue=issue,
+                           greenhouse=greenhouse,
+                           greenhouse_issues=active_greenhouse_issues)
 
 
 @bp.route('/issues/<int:issue_id>/update', methods=['POST'])
@@ -106,10 +118,12 @@ def update_issue_status(issue_id):
 @login_required
 def realtime_monitoring():
     parameters = SensorParameter.query.all()
-    current_readings = SensorData.query.order_by(SensorData.timestamp.desc()).limit(5).all()
+    current_readings = SensorData.query.order_by(SensorData.timestamp.desc()).limit(20).all()
+    greenhouses = Greenhouse.query.all()
     return render_template('realtime_monitoring.html',
                          parameters=parameters,
-                         current_readings=current_readings)
+                         current_readings=current_readings,
+                         greenhouses=greenhouses)
 
 
 @bp.route('/smart-alerts')
@@ -119,10 +133,41 @@ def smart_alerts():
     return render_template('smart_alerts.html',
                          active_issues=active_issues)
 
+
 @bp.route('/data-analytics')
+@bp.route('/data-analytics/<range>')
 @login_required
-def data_analytics():
-    return render_template('data_analytics.html')
+def data_analytics(range='24h'):
+    # Calculate time range
+    now = datetime.utcnow()
+    if range == '24h':
+        start_time = now - timedelta(hours=24)
+    elif range == '7d':
+        start_time = now - timedelta(days=7)
+    elif range == '30d':
+        start_time = now - timedelta(days=30)
+    else:
+        start_time = now - timedelta(hours=24)
+
+    # Fetch historical data
+    history_data = {
+        'temperature': get_sensor_history(parameter_id=1, start_time=start_time),
+        'humidity': get_sensor_history(parameter_id=2, start_time=start_time),
+        'air_quality': get_sensor_history(parameter_id=3, start_time=start_time),
+        'ph_level': get_sensor_history(parameter_id=4, start_time=start_time),
+        'light_intensity': get_sensor_history(parameter_id=5, start_time=start_time)
+    }
+
+    return render_template('data_analytics.html',
+                           history_data=history_data,
+                           active_range=range)
+
+
+def get_sensor_history(parameter_id, start_time):
+    return SensorData.query.filter(
+        SensorData.parameter_id == parameter_id,
+        SensorData.timestamp >= start_time
+    ).order_by(SensorData.timestamp.desc()).all()
 
 
 @bp.route('/api/sensor-data')

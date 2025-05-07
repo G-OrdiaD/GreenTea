@@ -2,8 +2,8 @@ import random
 from datetime import datetime
 from app.models import SensorData, SensorParameter, Greenhouse
 from app import db
-from flask import Flask
 from app import create_app
+
 
 def simulate_sensor_data(app):
     with app.app_context():

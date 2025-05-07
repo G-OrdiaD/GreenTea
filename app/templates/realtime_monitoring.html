@@ -14,44 +14,74 @@
     </div>
 </nav>
 
-    <h2>Optimal Parameter Ranges</h2>
-    <div class="parameter-table-container">
-        <table class="parameter-table">
-            <thead>
-                <tr>
-                    <th>Parameter</th>
-                    <th>Min Value</th>
-                    <th>Max Value</th>
-                    <th>Unit</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for param in parameters %}
-                <tr>
-                    <td>{{ param.name }}</td>
-                    <td>{{ param.min_value }}</td>
-                    <td>{{ param.max_value }}</td>
-                    <td>{{ param.unit }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="content-container">
+    <!-- Optimal Parameter Ranges Table -->
+    <div class="parameter-section">
+        <h2>Optimal Parameter Ranges</h2>
+        <div class="table-wrapper">
+            <table class="parameter-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Min Value</th>
+                        <th>Max Value</th>
+                        <th>Unit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for param in parameters %}
+                    <tr>
+                        <td>{{ param.name|title }}</td>
+                        <td>{{ "%.1f"|format(param.min_value) }}</td>
+                        <td>{{ "%.1f"|format(param.max_value) }}</td>
+                        <td>{{ param.unit }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <h2>Current Sensor Readings</h2>
-    <div class="current-readings">
-        {% for reading in current_readings %}
-        <div class="reading-card">
-            <h3>{{ reading.greenhouse.name }}</h3>
-            <div class="reading-values">
-                <p><i class="fas fa-temperature-high"></i> {{ reading.temperature }}°C</p>
-                <p><i class="fas fa-tint"></i> {{ reading.humidity }}%</p>
-                <p><i class="fas fa-wind"></i> {{ reading.air_quality }} ppm</p>
-                <p><i class="fas fa-sun"></i> {{ reading.light_intensity }} lux</p>
-                <p><i class="fas fa-vial"></i> {{ reading.ph }} pH</p>
+    <!-- Current Sensor Readings -->
+    <div class="readings-section">
+        <h2>Current Sensor Readings</h2>
+        <div class="readings-grid">
+            {% for greenhouse in greenhouses %}
+            <div class="reading-card">
+                <h3>{{ greenhouse.name }}</h3>
+                <div class="reading-values">
+                    {% for param in parameters %}
+                        {% set reading = current_readings|selectattr('greenhouse_id', 'equalto', greenhouse.id)|selectattr('parameter_id', 'equalto', param.id)|first %}
+                        <div class="reading-row {% if reading and reading.value > param.max_value %}above-range{% elif reading and reading.value < param.min_value %}below-range{% endif %}">
+                            <i class="fas fa-{{
+                                'temperature-high' if param.name == 'temperature'
+                                else 'tint' if param.name == 'humidity'
+                                else 'wind' if param.name == 'air_quality'
+                                else 'sun' if param.name == 'light_intensity'
+                                else 'vial' }}"></i>
+                            <span>{{ param.name|title }}:</span>
+                            <strong>
+                                {% if reading %}
+                                    {{ "%.1f"|format(reading.value) }} {{ param.unit }}
+                                {% else %}
+                                    --
+                                {% endif %}
+                            </strong>
+                            {% if reading %}
+                                {% if reading.value > param.max_value %}
+                                <span class="status-badge high">High</span>
+                                {% elif reading.value < param.min_value %}
+                                <span class="status-badge low">Low</span>
+                                {% else %}
+                                <span class="status-badge normal">OK</span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
     </div>
 </div>
 {% endblock %}

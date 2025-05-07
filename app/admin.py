@@ -54,15 +54,28 @@ def assign_greenhouse():
 @bp.route('/admin/users')
 @login_required
 def list_users():
-    if current_user.role != 'admin':
-        if request.accept_mimetypes.accept_json:
-            return jsonify({"error": "Unauthorized"}), 403
-        else:
-            flash("You are not authorized to access this page.", "danger")
-            return redirect(url_for('main.dashboard'))
-
-    users = User.query.all()
+    """Original HTML user management page"""
+    users = User.query.order_by(User.username).all()
     return render_template('admin/users.html', users=users)
+
+@bp.route('/api/admin/non-admin-users')
+@login_required
+def get_non_admin_users_api():
+    """Dedicated JSON endpoint for employee dropdown"""
+    try:
+        non_admin_users = User.query.filter(User.role != 'admin').all()
+        return jsonify({
+            'success': True,
+            'users': [{
+                'id': user.id,
+                'username': user.username
+            } for user in non_admin_users]
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @bp.route('/parameters', methods=['GET', 'POST'])
 @login_required

@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from app.models import SensorData, SensorParameter, Issue, db, OptimalRange
+from app.models import SensorData, SensorParameter, Issue, db
 
 
 def check_sensor_readings():
@@ -38,30 +38,5 @@ def check_sensor_readings():
                         timestamp=datetime.utcnow()
                     )
                     db.session.add(new_issue)
-
-    db.session.commit()
-
-
-def insert_default_optimal_ranges():
-
-    if not OptimalRange.query.filter_by(parameter="temperature").first():
-        temperature_range = OptimalRange(parameter="temperature", min_value=13.5, max_value=28.0)
-        db.session.add(temperature_range)
-
-    if not OptimalRange.query.filter_by(parameter="humidity").first():
-        humidity_range = OptimalRange(parameter="humidity", min_value=30.0, max_value=90.0)
-        db.session.add(humidity_range)
-
-    if not OptimalRange.query.filter_by(parameter="pH").first():
-        ph_range = OptimalRange(parameter="pH", min_value=5.0, max_value=7.5)
-        db.session.add(ph_range)
-
-    if not OptimalRange.query.filter_by(parameter="air_quality").first():
-        airquality_range = OptimalRange(parameter="air_quality", min_value=700, max_value=1500)
-        db.session.add(airquality_range)
-
-    if not OptimalRange.query.filter_by(parameter="light_intensity").first():
-        lightintensity_range = OptimalRange(parameter="light_intensity", min_value=500, max_value=2000)
-        db.session.add(lightintensity_range)
 
     db.session.commit()

@@ -22,6 +22,7 @@ def login():
         flash('Invalid credentials')
     return render_template('login.html')
 
+
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegistrationForm()
@@ -39,10 +40,30 @@ def register():
         return redirect(url_for('auth.login'))
     return render_template('register.html', form=form)
 
+
 @bp.route('/auth/reset_password', methods=['GET', 'POST'])
 def reset_password():
-    # Implementation for password reset
-    pass
+    if request.method == 'POST':
+        email = request.form.get('email')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        if new_password != confirm_password:
+            flash('Passwords do not match.', 'danger')
+            return redirect(url_for('auth.reset_password'))
+
+        user = User.query.filter_by(email=email).first()
+        if user:
+            user.set_password(new_password)  # Hash and set password
+            db.session.commit()
+            flash('Password reset successfully. Please log in.', 'success')
+            return redirect(url_for('auth.login'))
+        else:
+            flash('Email not found.', 'danger')
+            return redirect(url_for('auth.reset_password'))
+
+    return render_template('reset_password.html')
+
 
 @bp.route('/logout')
 @login_required

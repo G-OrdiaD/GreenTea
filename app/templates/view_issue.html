@@ -23,31 +23,63 @@
     </div>
 </nav>
 
-<div class="issue-container">
-    <div class="issue-details">
-        <p><strong>Greenhouse:</strong> {{ greenhouse.name }}</p>
-        <p><strong>Parameter:</strong> {{ issue.parameter.name }}</p>
-        <p><strong>Current Value:</strong> {{ issue.current_value }} {{ issue.parameter.unit }}</p>
-        <p><strong>Status:</strong> <span class="status status-{{ issue.status|lower }}">{{ issue.status }}</span></p>
-        <p><strong>Priority:</strong> <span class="priority-{{ issue.priority|lower }}">{{ issue.priority }}</span></p>
-        <p><strong>Reported:</strong> {{ issue.timestamp.strftime('%Y-%m-%d %H:%M') }}</p>
-    </div>
+<div class="table-container">
+    <h3>Active Issues in {{ greenhouse.name }}</h3>
+    <table class="greenhouse-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Issue</th>
+                <th>Priority</th>
+                <th>Assigned To</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for issue_item in greenhouse_issues %}
+            <tr tabindex="0">
+                <td>{{ issue_item.id }}</td>
+               <td>Issue with {{ issue_item.parameter.name }} (Current Value: {{ issue_item.current_value }} {{ issue_item.parameter.unit }})</td>
+                <td>
+                    <span class="priority-{{ issue_item.priority|lower }}">
+                        {{ issue_item.priority }}
+                    </span>
+                </td>
+                <td>
+                    {{ issue_item.assigned_to.username if issue_item.assigned_to else 'Unassigned' }}
+                </td>
+                <td>
+                    <span class="status-{{ issue_item.status|lower }}">
+                        {{ issue_item.status }}
+                    </span>
+                </td>
+                <td class="action-links">
+                    <a href="{{ url_for('main.view_issue', issue_id=issue_item.id) }}">View</a>
+                    {% if current_user.is_admin %}
+                    <a href="/issue/{{ issue_item.id }}/edit">Edit</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
-    <div class="status-update-form">
-        <form action="{{ url_for('main.update_issue_status', issue_id=issue.id) }}" method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="form-group">
-                <label for="status">Update Status:</label>
-                <select name="status" id="status" class="form-select">
-                    <option value="Open" {% if issue.status =='Open' %}selected{% endif %}>Open</option>
-                    <option value="Fixing" {% if issue.status =='Fixing' %}selected{% endif %}>Fixing</option>
-                    <option value="Resolved" {% if issue.status =='Resolved' %}selected{% endif %}>Resolved</option>
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save"></i> Update Status
-            </button>
-        </form>
-    </div>
+<div class="status-update-form">
+    <form action="{{ url_for('main.update_issue_status', issue_id=issue.id) }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+            <label for="status">Update Status:</label>
+            <select name="status" id="status" class="form-select">
+                <option value="Open" {% if issue.status =='Open' %}selected{% endif %}>Open</option>
+                <option value="Fixing" {% if issue.status =='Fixing' %}selected{% endif %}>Fixing</option>
+                <option value="Resolved" {% if issue.status =='Resolved' %}selected{% endif %}>Resolved</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Update Status
+        </button>
+    </form>
 </div>
 {% endblock %}
